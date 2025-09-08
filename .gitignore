@@ -1,0 +1,22 @@
+# Environment / editor
+.venv
+/venv
+.DS_Store
+.vscode
+.ipynb_checkpoints/
+
+# Large data artifacts
+Test_drl_training/processed_data_minmax/
+Test_drl_training/processed_data_paper/
+Test_drl_training/**/*.zip
+Test_drl_training/**/*.csv
+Test_drl_training/**/*.png
+Test_drl_training/**/*.json
+
+# Parquet datasets
+*.parquet
+Test_drl_training/
+*.csv
+*.parquet
+*.zip
+venv/
