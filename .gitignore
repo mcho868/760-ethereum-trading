@@ -15,7 +15,6 @@ Test_drl_training/**/*.json
 
 # Parquet datasets
 *.parquet
-Test_drl_training/
 *.csv
 *.parquet
 *.zip
