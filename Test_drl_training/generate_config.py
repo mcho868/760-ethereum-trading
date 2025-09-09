@@ -169,7 +169,7 @@ with open('training_configs.json', 'w') as f:
     json.dump(config_data, f, indent=2)
 
 print(f"✅ Generated {len(config_data['training_configurations'])} configurations")
-print(f"💾 Saved to: training_configs.json")
+print(f"💾 Saved to: training_config.json")
 print(f"📊 File size: ~{len(json.dumps(config_data)) / 1024:.1f} KB")
 
 # Print summary statistics
