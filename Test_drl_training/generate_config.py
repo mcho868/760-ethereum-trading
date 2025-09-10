@@ -165,7 +165,7 @@ print("🔄 Generating 1000 training configurations...")
 config_data = generate_1000_training_configs()
 
 # Save to JSON file
-with open('training_configs.json', 'w') as f:
+with open('training_config.json', 'w') as f:
     json.dump(config_data, f, indent=2)
 
 print(f"✅ Generated {len(config_data['training_configurations'])} configurations")
