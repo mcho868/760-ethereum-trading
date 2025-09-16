@@ -1,0 +1,53 @@
+{
+  "config": {
+    "config_id": "baseline_no_sentiment",
+    "algorithm": "A2C",
+    "description": "Baseline A2C configuration without sentiment signal",
+    "reward_components": {
+      "pnl_scale": 100.0,
+      "pnl_normalization": "nav",
+      "sharpe_weight": 0.2,
+      "sharpe_window": 120,
+      "transaction_penalty": 1.0,
+      "fee_rate": 0.001,
+      "slippage": 0.0005,
+      "drawdown_threshold": 0.15,
+      "drawdown_penalty": 50.0,
+      "holding_penalty": 0.001,
+      "holding_reward": 0.002,
+      "max_hold_periods": 1440,
+      "activity_reward": 0.1,
+      "inactivity_penalty": 0.01
+    },
+    "model_params": {
+      "learning_rate": 0.0003,
+      "n_steps": 2048,
+      "gamma": 0.99,
+      "gae_lambda": 0.95,
+      "ent_coef": 0.01,
+      "vf_coef": 0.5,
+      "max_grad_norm": 0.5,
+      "normalize_advantage": true,
+      "use_rms_prop": true,
+      "use_sde": false
+    },
+    "training": {
+      "total_timesteps": 30000,
+      "eval_freq": 5000,
+      "n_eval_episodes": 5
+    }
+  },
+  "metrics": {
+    "mean_reward": -1287195.75,
+    "training_time": 210.28566312789917,
+    "total_timesteps": 50000,
+    "config_id": "baseline_no_sentiment"
+  },
+  "test_reward": -1241505.625,
+  "model_path": "./models/baseline_no_sentiment_model",
+  "notes": "Baseline model with neutral sentiment (no sentiment signal)",
+  "analysis": {
+    "reward_magnitude": "Large negative values detected",
+    "status": "Needs reward function analysis"
+  }
+}
