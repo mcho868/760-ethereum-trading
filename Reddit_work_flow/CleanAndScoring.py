@@ -28,7 +28,9 @@ def clean_text(text: str) -> str:
     return text
 
 def read_csv_with_fallback(path: str) -> pd.DataFrame:
-    """Try utf-8 first, fall back to latin-1 to avoid decode errors."""
+    """Try utf-8 first, fall back to latin-1 to avoid decode errors. Handle JSONL format."""
+    if path.endswith('.jsonl'):
+        return pd.read_json(path, lines=True)
     try:
         return pd.read_csv(path, encoding="utf-8")
     except Exception:
@@ -76,7 +78,7 @@ def main(args):
 
     # 5) save with sentiment
     with_sent_csv = os.path.join(out_dir, f"{base}_with_sentiment.csv")
-    df.to_csv(with_sent_csv, index=False, encoding="utf-8")c
+    df.to_csv(with_sent_csv, index=False, encoding="utf-8")
 
     # 6) visualizations
     # 6.1 sentiment histogram
@@ -127,8 +129,8 @@ def main(args):
 
 if __name__ == "__main__":
     # 这里写上你自己的默认输入/输出路径（不传参数时就用这里）
-    DEFAULT_INPUT  = r"C:\Users\Jimmy\Desktop\760\submissions_2025-07_eth.csv"
-    DEFAULT_OUTDIR = r"C:\Users\Jimmy\Desktop\760\cleaned"
+    DEFAULT_INPUT  = "/Users/choemanseung/4th year/760/760-ethereum-trading/submissions_2025-07_eth.jsonl"
+    DEFAULT_OUTDIR = "/Users/choemanseung/4th year/760/760-ethereum-trading/Reddit_work_flow/output"
 
     parser = argparse.ArgumentParser()
     parser.add_argument("--in",  dest="input",  required=False, help="path to input CSV")
