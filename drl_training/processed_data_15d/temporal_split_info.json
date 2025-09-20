@@ -6,12 +6,12 @@
   "train_ratio": 0.6999995221425852,
   "val_ratio": 0.14999997345236585,
   "test_ratio": 0.15000050440504895,
-  "train_start_date": "2022-01-01T00:33:00+00:00",
-  "train_end_date": "2024-07-04T14:56:00+00:00",
-  "val_start_date": "2024-07-04T14:57:00+00:00",
-  "val_end_date": "2025-01-16T19:27:00+00:00",
-  "test_start_date": "2025-01-16T19:28:00+00:00",
-  "test_end_date": "2025-07-31T23:59:00+00:00",
+  "train_start_date": "2022-01-01T00:33:00",
+  "train_end_date": "2024-07-04T14:56:00",
+  "val_start_date": "2024-07-04T14:57:00",
+  "val_end_date": "2025-01-16T19:27:00",
+  "test_start_date": "2025-01-16T19:28:00",
+  "test_end_date": "2025-07-31T23:59:00",
   "methodology_compliance": true,
   "chronological_order": true
 }
