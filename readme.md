@@ -1,7 +1,7 @@
 Potential Problems (ethTradingDrlAgent.ipynb)
 
   1. Action & Risk Shaping Consistency (Position Dynamics + Reward/Risk Design)
-  2. 
+   
     (1) Per-step position shift constraint is not enforced (agent can jump from −1 to +1 in one step).
         The env comments say “Apply position shift constraint,” but the code only clips the raw action to [-1,1]. It does not cap the change in position between steps.
         Why it matters: The agent can “teleport” from −1 to +1 in one step, creating unrealistic turnover, excessive costs, and unstable learning.
