@@ -1,0 +1,8 @@
+asyncio
+websockets
+numpy
+pandas
+stable-baselines3
+talib
+scikit-learn
+logging
