@@ -1,0 +1,43 @@
+{
+  "metadata": {
+    "timestamp": "2025-09-28T00:39:19.804421",
+    "n_windows": 1,
+    "rolling_window_months": 6,
+    "evaluation_period_months": 1,
+    "config_source": "RollingWindowTrainer"
+  },
+  "analysis": {
+    "n_windows": 1,
+    "n_successful": 1,
+    "mean_performance": "-25138.64",
+    "std_performance": "0.0",
+    "min_performance": "-25138.64",
+    "max_performance": "-25138.64",
+    "performance_range": "0.0",
+    "coefficient_of_variation": "0.0",
+    "stability_score": "1.0",
+    "mean_training_time": 22.377368688583374,
+    "total_training_time": 22.377368688583374
+  },
+  "window_results": [
+    {
+      "algorithm": "A2C",
+      "config_id": "rolling_diagnostic_lr_low_window_1",
+      "mean_reward": "-25138.64",
+      "reward_std": "0.0",
+      "training_time": 22.377368688583374,
+      "total_timesteps": 50000,
+      "device": "cpu",
+      "timestamp": "2025-09-28T00:39:19.802808",
+      "window_index": 1,
+      "train_start_idx": 0,
+      "train_end_idx": 259200,
+      "eval_start_idx": 259200,
+      "eval_end_idx": 302400,
+      "train_rows": 259200,
+      "eval_rows": 43200,
+      "rolling_window_months": 6,
+      "eval_window_months": 1
+    }
+  ]
+}

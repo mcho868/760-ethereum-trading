@@ -8208,6 +8208,88 @@
         "vf_coef": 0.5,
         "max_grad_norm": 0.3
       }
+    },
+    {
+      "config_id": "a2c_0201",
+      "algorithm": "A2C",
+      "description": "A2C configuration 201 with reward function optimization",
+      "reward_components": {
+        "pnl_scale": 89.342618,
+        "pnl_normalization": "nav",
+        "sharpe_weight": 0.189745,
+        "sharpe_window": 1440,
+        "transaction_penalty": 0.647582,
+        "fee_rate": 0.000896,
+        "slippage": 0.000451,
+        "drawdown_threshold": 0.094372,
+        "drawdown_penalty": 71.235491,
+        "holding_penalty": 0.000934,
+        "holding_reward": 0.000512,
+        "max_hold_periods": 1440,
+        "activity_reward": 0.076128,
+        "inactivity_penalty": 0.006217
+      },
+      "training": {
+        "total_timesteps": 150000,
+        "train_episode_length": 1440,
+        "eval_episode_length": 40320,
+        "rolling_window_months": 12
+      },
+      "risk_management": {
+        "max_position_change": 0.12,
+        "max_drawdown_limit": 0.18,
+        "position_size_limit": 0.9
+      },
+      "model_params": {
+        "learning_rate": 0.0002,
+        "n_steps": 2048,
+        "gamma": 0.99,
+        "gae_lambda": 0.96,
+        "ent_coef": 0.01,
+        "vf_coef": 0.25,
+        "max_grad_norm": 0.8
+      }
+    },
+    {
+      "config_id": "a2c_0202",
+      "algorithm": "A2C",
+      "description": "A2C configuration 202 with reward function optimization",
+      "reward_components": {
+        "pnl_scale": 112.784693,
+        "pnl_normalization": "nav",
+        "sharpe_weight": 0.315467,
+        "sharpe_window": 1440,
+        "transaction_penalty": 0.825134,
+        "fee_rate": 0.000745,
+        "slippage": 0.000623,
+        "drawdown_threshold": 0.081259,
+        "drawdown_penalty": 47.891367,
+        "holding_penalty": 0.001089,
+        "holding_reward": 0.000634,
+        "max_hold_periods": 1440,
+        "activity_reward": 0.108472,
+        "inactivity_penalty": 0.003926
+      },
+      "training": {
+        "total_timesteps": 250000,
+        "train_episode_length": 1440,
+        "eval_episode_length": 40320,
+        "rolling_window_months": 8
+      },
+      "risk_management": {
+        "max_position_change": 0.07,
+        "max_drawdown_limit": 0.22,
+        "position_size_limit": 0.75
+      },
+      "model_params": {
+        "learning_rate": 0.0005,
+        "n_steps": 8192,
+        "gamma": 0.97,
+        "gae_lambda": 0.94,
+        "ent_coef": 0.001,
+        "vf_coef": 0.6,
+        "max_grad_norm": 0.4
+      }
     }
   ]
 }

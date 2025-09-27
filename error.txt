@@ -1,0 +1,71 @@
+📊 Starting Final Testing & Comprehensive Analysis...
+✅ PerformanceAnalyzer initialized
+   📁 Output directory: processed_data_15d/analysis_plots
+
+🔄 Loading previously trained models...
+   ✅ Loaded 202 configurations from ./drl_training_configs.json
+   📊 Algorithms: ['A2C']
+   📅 Valid episode range: [120, 272431]
+   🎮 Action space: Box(-1.0, 1.0, (1,), float32)
+   👁️ Observation space: (15,)
+🏛️ TradingEnvironment initialized:
+   📊 Data shape: (282512, 31)
+   📋 Features: 13D
+   🎯 State space: 15D
+   ⏱️ Episode length: 10,080 minutes
+   🔄 Random start: False
+   💰 Initial capital: $10,000
+   ✅ Loaded a2c_0001: Test reward = -6897.1274
+
+✅ Loaded 1 trained models successfully!
+
+🔄 Starting comprehensive analysis of loaded models...
+   📅 Valid episode range: [120, 272431]
+   🎮 Action space: Box(-1.0, 1.0, (1,), float32)
+   👁️ Observation space: (15,)
+🏛️ TradingEnvironment initialized:
+   📊 Data shape: (282512, 31)
+   📋 Features: 13D
+   🎯 State space: 15D
+   ⏱️ Episode length: 10,080 minutes
+   🔄 Random start: False
+   💰 Initial capital: $10,000
+🔍 Analyzing model performance over 5 episodes...
+   📊 Running episode 1/5
+      ⚠️ Episode failed: 'DummyVecEnv' object has no attribute 'get_episode_summary'
+   📊 Running episode 2/5
+      ⚠️ Episode failed: 'DummyVecEnv' object has no attribute 'get_episode_summary'
+   📊 Running episode 3/5
+      ⚠️ Episode failed: 'DummyVecEnv' object has no attribute 'get_episode_summary'
+   📊 Running episode 4/5
+      ⚠️ Episode failed: 'DummyVecEnv' object has no attribute 'get_episode_summary'
+   📊 Running episode 5/5
+      ⚠️ Episode failed: 'DummyVecEnv' object has no attribute 'get_episode_summary'
+   ✅ Analyzed a2c_0001: Test reward = -6897.1274
+
+🏆 Final Rankings (Test Set Performance):
+ 1. a2c_0001 (A2C) | Test reward: -6897.1274
+
+🎨 Generating comprehensive visualizations...
+
+📈 Detailed analysis for best model: a2c_0001
+🎨 Creating performance visualizations...
+   ⚠️ No episode data available for visualization
+ℹ️ Only one model available: skipping comparison dashboard.
+
+🎉 FINAL RESULTS SUMMARY
+============================================================
+🥇 Best Model: a2c_0001
+🔧 Algorithm: A2C
+📊 Final Test Reward: -6897.1274
+📈 Average Total Return: 0.00%
+📊 Average Sharpe Ratio: 0.000
+📉 Average Max Drawdown: 0.00%
+💰 Average Final Portfolio: $0
+============================================================
+
+✅ Complete DRL Trading Analysis Finished!
+📁 All plots and results saved to: ./processed_data_15d
+💾 Trained models saved to: ./models
+
+🎯 Analysis pipeline complete!

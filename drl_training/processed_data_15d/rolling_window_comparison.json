@@ -1,0 +1,165 @@
+{
+  "metadata": {
+    "timestamp": "2025-09-28T00:39:19.808476",
+    "n_configurations": 2,
+    "comparison_source": "RollingWindowTrainer"
+  },
+  "comparison_results": {
+    "rolling_diagnostic": {
+      "config": {
+        "config_id": "rolling_diagnostic",
+        "algorithm": "A2C",
+        "model_params": {
+          "learning_rate": 0.0003,
+          "n_steps": 2048,
+          "gamma": 0.99,
+          "gae_lambda": 0.95,
+          "ent_coef": 0.01,
+          "vf_coef": 0.5,
+          "max_grad_norm": 0.5,
+          "normalize_advantage": true,
+          "use_rms_prop": true,
+          "use_sde": false
+        },
+        "training": {
+          "total_timesteps": 50000,
+          "eval_freq": 5000,
+          "n_eval_episodes": 1,
+          "eval_log_path": "./logs",
+          "verbose": 0
+        },
+        "reward_components": {
+          "pnl_scale": 100.0,
+          "pnl_normalization": "nav",
+          "sharpe_weight": 0.2,
+          "sharpe_window": 1440,
+          "transaction_penalty": 1.0,
+          "fee_rate": 0.001,
+          "slippage": 0.0005,
+          "drawdown_threshold": 0.1,
+          "drawdown_penalty": 50.0,
+          "holding_penalty": 0.001,
+          "holding_reward": 0.0005,
+          "max_hold_periods": 1440,
+          "activity_reward": 0.1,
+          "inactivity_penalty": 0.005,
+          "enable_sentiment_reward": true,
+          "sentiment_reward_weight": 0.0
+        }
+      },
+      "window_results": [
+        {
+          "algorithm": "A2C",
+          "config_id": "rolling_diagnostic_window_1",
+          "mean_reward": "-3720.4595",
+          "reward_std": "0.0",
+          "training_time": 21.711576223373413,
+          "total_timesteps": 50000,
+          "device": "cpu",
+          "timestamp": "2025-09-28T00:38:50.725293",
+          "window_index": 1,
+          "train_start_idx": 0,
+          "train_end_idx": 259200,
+          "eval_start_idx": 259200,
+          "eval_end_idx": 302400,
+          "train_rows": 259200,
+          "eval_rows": 43200,
+          "rolling_window_months": 6,
+          "eval_window_months": 1
+        }
+      ],
+      "analysis": {
+        "n_windows": 1,
+        "n_successful": 1,
+        "mean_performance": "-3720.4595",
+        "std_performance": "0.0",
+        "min_performance": "-3720.4595",
+        "max_performance": "-3720.4595",
+        "performance_range": "0.0",
+        "coefficient_of_variation": "0.0",
+        "stability_score": "1.0",
+        "mean_training_time": 21.711576223373413,
+        "total_training_time": 21.711576223373413
+      },
+      "status": "success"
+    },
+    "rolling_diagnostic_lr_low": {
+      "config": {
+        "config_id": "rolling_diagnostic_lr_low",
+        "algorithm": "A2C",
+        "model_params": {
+          "learning_rate": 0.0001,
+          "n_steps": 2048,
+          "gamma": 0.99,
+          "gae_lambda": 0.95,
+          "ent_coef": 0.01,
+          "vf_coef": 0.5,
+          "max_grad_norm": 0.5,
+          "normalize_advantage": true,
+          "use_rms_prop": true,
+          "use_sde": false
+        },
+        "training": {
+          "total_timesteps": 50000,
+          "eval_freq": 5000,
+          "n_eval_episodes": 1,
+          "eval_log_path": "./logs",
+          "verbose": 0
+        },
+        "reward_components": {
+          "pnl_scale": 100.0,
+          "pnl_normalization": "nav",
+          "sharpe_weight": 0.2,
+          "sharpe_window": 1440,
+          "transaction_penalty": 1.0,
+          "fee_rate": 0.001,
+          "slippage": 0.0005,
+          "drawdown_threshold": 0.1,
+          "drawdown_penalty": 50.0,
+          "holding_penalty": 0.001,
+          "holding_reward": 0.0005,
+          "max_hold_periods": 1440,
+          "activity_reward": 0.1,
+          "inactivity_penalty": 0.005,
+          "enable_sentiment_reward": true,
+          "sentiment_reward_weight": 0.0
+        }
+      },
+      "window_results": [
+        {
+          "algorithm": "A2C",
+          "config_id": "rolling_diagnostic_lr_low_window_1",
+          "mean_reward": "-25138.64",
+          "reward_std": "0.0",
+          "training_time": 22.377368688583374,
+          "total_timesteps": 50000,
+          "device": "cpu",
+          "timestamp": "2025-09-28T00:39:19.802808",
+          "window_index": 1,
+          "train_start_idx": 0,
+          "train_end_idx": 259200,
+          "eval_start_idx": 259200,
+          "eval_end_idx": 302400,
+          "train_rows": 259200,
+          "eval_rows": 43200,
+          "rolling_window_months": 6,
+          "eval_window_months": 1
+        }
+      ],
+      "analysis": {
+        "n_windows": 1,
+        "n_successful": 1,
+        "mean_performance": "-25138.64",
+        "std_performance": "0.0",
+        "min_performance": "-25138.64",
+        "max_performance": "-25138.64",
+        "performance_range": "0.0",
+        "coefficient_of_variation": "0.0",
+        "stability_score": "1.0",
+        "mean_training_time": 22.377368688583374,
+        "total_training_time": 22.377368688583374
+      },
+      "status": "success"
+    }
+  }
+}

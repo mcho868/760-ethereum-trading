@@ -1,0 +1,5 @@
+{
+  "model_path": "drl_training/models/a2c_0001_final.zip",
+  "scaler_path": null,
+  "sentiment_path": "/Users/choemanseung/4th year/760/760-ethereum-trading/data/reddit/weighted/sentiment_1min_vader_s1_s5.csv"
+}
