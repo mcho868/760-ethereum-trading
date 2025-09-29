@@ -1,5 +1,21 @@
 {
   "model_path": "drl_training/models/a2c_0001_final.zip",
   "scaler_path": null,
-  "sentiment_path": "/Users/choemanseung/4th year/760/760-ethereum-trading/data/reddit/weighted/sentiment_1min_vader_s1_s5.csv"
+  "sentiment_path": "/Users/choemanseung/4th year/760/760-ethereum-trading/data/reddit/weighted/sentiment_1min_vader_s1_s5.csv",
+  "sentiment_pipeline": {
+    "enabled": true,
+    "force_run": false,
+    "base_dir": null,
+    "subreddits": null,
+    "keywords": null,
+    "lmstudio": {
+      "base_url": "http://127.0.0.1:1234/v1",
+      "api_key": "lm-studio",
+      "concurrency": 2,
+      "retry": 3,
+      "manage_models": true
+    },
+    "models": null,
+    "reddit": null
+  }
 }

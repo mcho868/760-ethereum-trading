@@ -16,12 +16,15 @@ import numpy as np
 import pandas as pd
 from tenacity import retry, wait_exponential, stop_after_attempt
 
+from realtimeSentimentPipeline import RealTimeSentimentPipeline
+
 # Import our components
 from model_loader import ModelLoader
 from online_feature_engine import OnlineFeatureEngine
 import binance_client as binance_api
 
 # === CONFIGURATION & CONSTANTS ===
+IS_DEBUG_MODE = "--debug" in sys.argv
 SYMBOL = "ETHUSDT"
 INTERVAL = "1m"
 RAW_DIR = f"data/price/raw/{SYMBOL}"
@@ -113,12 +116,10 @@ class TradingSystem:
         logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s', handlers=[logging.FileHandler('trading_system.log'), logging.StreamHandler(sys.stdout)])
         self.logger = logging.getLogger(__name__)
         
-        self._initialize_components()
-        
         signal.signal(signal.SIGINT, self._signal_handler)
         signal.signal(signal.SIGTERM, self._signal_handler)
         
-    def _initialize_components(self):
+    async def async_init(self):
         try:
             model_path = self.config.get('model_path')
             if not model_path: raise ValueError("model_path required in config")
@@ -126,6 +127,50 @@ class TradingSystem:
             self.logger.info(f"Model loaded: {self.model_loader.get_model_info()}")
 
             self.logger.info("Using binance_client.py for exchange communication (hardcoded to Testnet).")
+            sentiment_override = None
+            pipeline_cfg = self.config.get('sentiment_pipeline', {})
+            if pipeline_cfg.get('enabled', True):
+                pipeline = RealTimeSentimentPipeline(
+                    base_dir=pipeline_cfg.get('base_dir'),
+                    subreddits=pipeline_cfg.get('subreddits'),
+                    keyword_patterns=pipeline_cfg.get('keywords'),
+                    lmstudio_config=pipeline_cfg.get('lmstudio'),
+                    model_sequence=pipeline_cfg.get('models'),
+                    reddit_credentials=pipeline_cfg.get('reddit'),
+                )
+                if IS_DEBUG_MODE:
+                    self.logger.info("[DEBUG] Debug flag set. Forcing sentiment update for yesterday.")
+                    try:
+                        result = await pipeline.run(force=True)
+                        self.logger.info(result.message)
+                        if result.minute_path:
+                            sentiment_override = str(result.minute_path)
+                    except Exception as e:
+                        self.logger.warning("Sentiment pipeline failed during debug run: %s", e, exc_info=True)
+                else:
+                    self.logger.info("Checking for missing sentiment data to backfill...")
+                    try:
+                        last_processed_date = pipeline.get_last_processed_date()
+                        
+                        # Start backfill from the day after the last processed, or 3 days ago if no data exists
+                        start_date = (last_processed_date + timedelta(days=1)) if last_processed_date else (datetime.now(timezone.utc).date() - timedelta(days=3))
+                        end_date = datetime.now(timezone.utc).date() # End date is today (exclusive)
+
+                        current_date = start_date
+                        while current_date < end_date:
+                            self.logger.info(f"Running sentiment pipeline for missing day: {current_date}")
+                            await pipeline.run(target_date=current_date)
+                            current_date += timedelta(days=1)
+                        
+                        self.logger.info("Sentiment data is up-to-date.")
+                        # Use the latest available aggregated file
+                        _, minute_path = pipeline._latest_aggregated_paths()
+                        if minute_path:
+                            sentiment_override = str(minute_path)
+
+                    except Exception as e:
+                        self.logger.warning("Sentiment backfill process failed: %s", e, exc_info=True)
+
             self._fetch_exchange_rules()
             self.sync_portfolio_state()
 
@@ -140,7 +185,9 @@ class TradingSystem:
                 self.initial_portfolio_value = 0.0
 
             os.makedirs(os.path.dirname(STATE_PATH), exist_ok=True)
-            self.feature_engine = OnlineFeatureEngine(symbol=SYMBOL, state_path=STATE_PATH, sentiment_1min_path=self.config.get('sentiment_path', SENT_1MIN_PATH))
+            sentiment_path = sentiment_override or self.config.get('sentiment_path', SENT_1MIN_PATH)
+            self.config['sentiment_path'] = sentiment_path
+            self.feature_engine = OnlineFeatureEngine(symbol=SYMBOL, state_path=STATE_PATH, sentiment_1min_path=sentiment_path)
             self.logger.info("OnlineFeatureEngine initialized.")
 
             os.makedirs(RAW_DIR, exist_ok=True)
@@ -380,10 +427,23 @@ def load_config() -> Dict:
         with open(config_file, 'r') as f:
             return json.load(f)
     else:
+        repo_root = Path(__file__).resolve().parents[1]
+        default_sentiment = str((repo_root / "data" / "reddit" / "weighted" / "sentiment_1min_vader_s1_s5.csv").resolve())
         default_config = {
             "model_path": "drl_training/models/a2c_0001_final.zip",
             "scaler_path": None,
-            "sentiment_path": "/Users/choemanseung/4th year/760/760-ethereum-trading/data/reddit/weighted/sentiment_1min_vader_s1_s5.csv"
+            "sentiment_path": default_sentiment,
+            "sentiment_pipeline": {
+                "enabled": True,
+                "force_run": False,
+                "lmstudio": {
+                    "base_url": "http://127.0.0.1:1234/v1",
+                    "api_key": "lm-studio",
+                    "concurrency": 2,
+                    "retry": 3,
+                    "manage_models": True
+                }
+            }
         }
         with open(config_file, 'w') as f:
             json.dump(default_config, f, indent=2)
@@ -393,6 +453,7 @@ async def main():
     try:
         config = load_config()
         system = TradingSystem(config)
+        await system.async_init()
         await system.start()
     except Exception as e:
         logging.critical(f"Fatal error in main: {e}", exc_info=True)

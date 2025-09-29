@@ -6,3 +6,8 @@ stable-baselines3
 scikit-learn
 logging
 binance
+praw
+python-dotenv
+requests
+nltk
+openai
