@@ -14,13 +14,12 @@ import numpy as np
 import pandas as pd
 from typing import Dict, List, Tuple, Optional, Any, Union
 from datetime import datetime
-import warnings
 
 # Stable Baselines3 imports
 from stable_baselines3 import A2C, TD3
 from stable_baselines3.common.vec_env import DummyVecEnv, VecNormalize
 from stable_baselines3.common.monitor import Monitor
-from stable_baselines3.common.callbacks import EvalCallback, StopTrainingOnRewardThreshold
+from stable_baselines3.common.callbacks import EvalCallback
 from stable_baselines3.common.noise import NormalActionNoise
 from stable_baselines3.common.utils import set_random_seed
 
@@ -47,7 +46,9 @@ class ModelTrainer:
                  val_data: pd.DataFrame,
                  test_data: pd.DataFrame,
                  feature_columns: List[str],
-                 config: ConfigManager):
+                 config: ConfigManager,
+                 device: str = "cpu",
+        ):
         """
         Initialize ModelTrainer.
         
@@ -57,21 +58,24 @@ class ModelTrainer:
             test_data: Test dataset
             feature_columns: List of feature columns (13D)
             config: ConfigManager instance
+            device: Device to use for training
         """
         self.train_data = train_data
         self.val_data = val_data
         self.test_data = test_data
         self.feature_columns = feature_columns
         self.config = config
+        self.device = device
         
-        # Set up device
-        if torch.cuda.is_available():
-            self.device = "cuda"
-            print(f"🖥️ Using CUDA device: {torch.cuda.get_device_name()}")
-        else:
-            self.device = "cpu"
-            print(f"🖥️ Using CPU device")
-        
+        if self.device == "gpu":
+            # Set up device
+            if torch.cuda.is_available():
+                self.device = "cuda"
+                print(f"🖥️ Using CUDA device: {torch.cuda.get_device_name()}")
+            elif torch.backends.mps.is_available():
+                self.device = "mps"
+                print(f"🖥️ Using MPS device")
+
         # Set random seed for reproducibility
         if hasattr(config, 'random_seed'):
             set_random_seed(config.random_seed)
@@ -316,142 +320,6 @@ class ModelTrainer:
         reward_std = np.std(episode_rewards)
         
         return mean_reward, reward_std
-    
-    def rolling_window_training(self,
-                               config: Dict[str, Any],
-                               rolling_months: Optional[int] = None,
-                               eval_months: Optional[int] = None,
-                               step_months: Optional[int] = None) -> List[Dict[str, Any]]:
-        """
-        Implement rolling window training as per methodology.
-        
-        Args:
-            config: Model configuration dictionary
-            rolling_months: Rolling window size in months (uses config default if None)
-            eval_months: Evaluation period in months (uses config default if None)
-            step_months: Step size in months (uses config default if None)
-            
-        Returns:
-            List of performance results for each window
-        """
-        # Use configuration defaults if not provided
-        protocol_config = self.config.training_protocol
-        rolling_months = rolling_months or protocol_config.rolling_window_months
-        eval_months = eval_months or protocol_config.evaluation_period_months
-        step_months = step_months or protocol_config.rolling_step_months
-        
-        print(f"🔄 Starting rolling window training")
-        print(f"   📅 Rolling window: {rolling_months} months")
-        print(f"   📊 Evaluation period: {eval_months} months")
-        print(f"   📈 Step size: {step_months} months")
-        
-        # Calculate window sizes (simplified - using row indices)
-        total_rows = len(self.train_data)
-        minutes_per_month = 30 * 24 * 60  # Approximate
-        
-        rolling_window_size = min(rolling_months * minutes_per_month, total_rows // 2)
-        eval_window_size = min(eval_months * minutes_per_month, total_rows // 10)
-        step_size = step_months * minutes_per_month
-        
-        results = []
-        window_start = 0
-        
-        while window_start + rolling_window_size + eval_window_size <= total_rows:
-            # Define current windows
-            train_window_end = window_start + rolling_window_size
-            eval_window_end = train_window_end + eval_window_size
-            
-            # Extract data for current window
-            current_train_data = self.train_data.iloc[window_start:train_window_end].copy()
-            current_eval_data = self.train_data.iloc[train_window_end:eval_window_end].copy()
-            
-            window_idx = len(results) + 1
-            print(f"   📊 Window {window_idx}: Training [{window_start}:{train_window_end}], "
-                  f"Eval [{train_window_end}:{eval_window_end}]")
-            
-            # Train model for current window
-            algorithm = config.get('algorithm', 'A2C').upper()
-            
-            try:
-                if algorithm == 'A2C':
-                    model, metrics = self.train_a2c_model(
-                        config, 
-                        train_data=current_train_data, 
-                        val_data=current_eval_data
-                    )
-                elif algorithm == 'TD3':
-                    model, metrics = self.train_td3_model(
-                        config,
-                        train_data=current_train_data,
-                        val_data=current_eval_data
-                    )
-                else:
-                    raise ValueError(f"Unsupported algorithm: {algorithm}")
-                
-                # Add window information to metrics
-                metrics.update({
-                    'window_index': window_idx,
-                    'train_start_idx': window_start,
-                    'train_end_idx': train_window_end,
-                    'eval_start_idx': train_window_end,
-                    'eval_end_idx': eval_window_end,
-                    'train_rows': len(current_train_data),
-                    'eval_rows': len(current_eval_data),
-                    'rolling_months': rolling_months,
-                    'eval_months': eval_months
-                })
-                
-                results.append(metrics)
-                
-                print(f"      ✅ Window {window_idx} complete, "
-                      f"Mean reward: {metrics['mean_reward']:.4f}")
-                
-            except Exception as e:
-                print(f"      ❌ Window {window_idx} failed: {str(e)}")
-                # Add failed window info
-                results.append({
-                    'window_index': window_idx,
-                    'status': 'failed',
-                    'error': str(e),
-                    'train_start_idx': window_start,
-                    'train_end_idx': train_window_end,
-                    'eval_start_idx': train_window_end,
-                    'eval_end_idx': eval_window_end
-                })
-            
-            # Move to next window
-            window_start += step_size
-        
-        print(f"🎉 Rolling window training complete! {len(results)} windows processed")
-        
-        return results
-    
-    def load_model(self, model_path: str, algorithm: str) -> Union[A2C, TD3]:
-        """
-        Load a previously trained model.
-        
-        Args:
-            model_path: Path to the saved model
-            algorithm: Algorithm type ('A2C' or 'TD3')
-            
-        Returns:
-            Loaded model
-        """
-        try:
-            if algorithm.upper() == 'A2C':
-                model = A2C.load(model_path, device=self.device)
-            elif algorithm.upper() == 'TD3':
-                model = TD3.load(model_path, device=self.device)
-            else:
-                raise ValueError(f"Unsupported algorithm: {algorithm}")
-            
-            print(f"✅ Model loaded from: {model_path}")
-            return model
-            
-        except Exception as e:
-            print(f"❌ Failed to load model from {model_path}: {str(e)}")
-            raise
-    
     def _save_model(self, model, path: str) -> str:
         """Save trained model to disk."""
         try:
@@ -461,125 +329,3 @@ class ModelTrainer:
         except Exception as e:
             print(f"   ⚠️ Failed to save model: {str(e)}")
             return None
-    
-    def get_training_summary(self) -> Dict[str, Any]:
-        """Get summary of all training sessions."""
-        if not self.training_history:
-            return {'message': 'No training sessions completed'}
-        
-        algorithms = [h['algorithm'] for h in self.training_history]
-        rewards = [h['mean_reward'] for h in self.training_history]
-        times = [h['training_time'] for h in self.training_history]
-        
-        return {
-            'total_sessions': len(self.training_history),
-            'algorithms_used': list(set(algorithms)),
-            'best_mean_reward': max(rewards),
-            'worst_mean_reward': min(rewards),
-            'average_reward': np.mean(rewards),
-            'total_training_time': sum(times),
-            'average_training_time': np.mean(times),
-            'last_session': self.training_history[-1] if self.training_history else None
-        }
-    
-    def compare_models(self, model_configs: List[Dict[str, Any]]) -> pd.DataFrame:
-        """
-        Compare multiple model configurations by training and evaluating them.
-        
-        Args:
-            model_configs: List of model configuration dictionaries
-            
-        Returns:
-            DataFrame with comparison results
-        """
-        print(f"🔍 Comparing {len(model_configs)} model configurations...")
-        
-        comparison_results = []
-        
-        for i, config in enumerate(model_configs):
-            print(f"\n📊 Training configuration {i+1}/{len(model_configs)}: {config.get('config_id', f'config_{i+1}')}")
-            
-            try:
-                algorithm = config.get('algorithm', 'A2C').upper()
-                
-                if algorithm == 'A2C':
-                    model, metrics = self.train_a2c_model(config, save_model=False)
-                elif algorithm == 'TD3':
-                    model, metrics = self.train_td3_model(config, save_model=False)
-                else:
-                    print(f"   ⚠️ Unsupported algorithm: {algorithm}")
-                    continue
-                
-                comparison_results.append(metrics)
-                
-            except Exception as e:
-                print(f"   ❌ Configuration failed: {str(e)}")
-                comparison_results.append({
-                    'config_id': config.get('config_id', f'config_{i+1}'),
-                    'algorithm': config.get('algorithm', 'Unknown'),
-                    'status': 'failed',
-                    'error': str(e)
-                })
-        
-        # Convert to DataFrame for easy comparison
-        df = pd.DataFrame(comparison_results)
-        
-        if len(df) > 0 and 'mean_reward' in df.columns:
-            df = df.sort_values('mean_reward', ascending=False)
-            print(f"\n🏆 Best performing configuration: {df.iloc[0]['config_id']} "
-                  f"(Mean reward: {df.iloc[0]['mean_reward']:.4f})")
-        
-        return df
-
-
-if __name__ == "__main__":
-    # Example usage
-    from .config_manager import ConfigManager
-    from .data_processor import DataProcessor
-    
-    # Create configuration and data
-    config = ConfigManager()
-    processor = DataProcessor(config)
-    
-    # Mock data for testing
-    dummy_data = pd.DataFrame({
-        'ts': np.arange(10000),
-        'close': 100 + np.random.randn(10000).cumsum() * 0.1,
-        'volume': np.random.uniform(1000, 10000, 10000)
-    })
-    
-    # Add features
-    feature_cols = config.get_feature_columns()
-    for col in feature_cols:
-        dummy_data[col] = np.random.randn(10000)
-    
-    # Create data splits
-    train_split = int(0.7 * len(dummy_data))
-    val_split = int(0.85 * len(dummy_data))
-    
-    train_data = dummy_data[:train_split].copy()
-    val_data = dummy_data[train_split:val_split].copy()
-    test_data = dummy_data[val_split:].copy()
-    
-    # Initialize trainer
-    trainer = ModelTrainer(train_data, val_data, test_data, feature_cols, config)
-    
-    # Example configuration
-    test_config = {
-        'config_id': 'test_a2c',
-        'algorithm': 'A2C',
-        'model_params': config.model.a2c_params,
-        'training': {
-            'total_timesteps': 10000,
-            'eval_freq': 2000,
-            'n_eval_episodes': 3
-        }
-    }
-    
-    # Train model
-    model, metrics = trainer.train_a2c_model(test_config, save_model=False)
-    print(f"\nTraining completed: {metrics}")
-    
-    # Get training summary
-    summary = trainer.get_training_summary()
-    print(f"\nTraining summary: {summary}")

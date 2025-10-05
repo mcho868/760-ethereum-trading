@@ -12,8 +12,7 @@ import json
 import pandas as pd
 import numpy as np
 from typing import Dict, List, Tuple, Optional, Any
-from pathlib import Path
-# Technical Analysis library (optional)
+
 try:
     import ta
     TA_AVAILABLE = True
@@ -616,105 +615,3 @@ class DataProcessor:
         self.feature_columns = feature_columns
         
         return df_processed, feature_columns, splits
-    
-    def load_existing_splits(self) -> Optional[Dict[str, Any]]:
-        """
-        Load existing data splits from files.
-        
-        Returns:
-            Dictionary with splits or None if not found
-        """
-        output_dir = self.config.data.output_dir
-        train_path = os.path.join(output_dir, 'train_data_15d.parquet')
-        val_path = os.path.join(output_dir, 'val_data_15d.parquet')
-        test_path = os.path.join(output_dir, 'test_data_15d.parquet')
-        split_info_path = os.path.join(output_dir, 'temporal_split_info.json')
-        
-        if not all(os.path.exists(p) for p in [train_path, val_path, test_path, split_info_path]):
-            return None
-        
-        try:
-            train_df = pd.read_parquet(train_path)
-            val_df = pd.read_parquet(val_path)
-            test_df = pd.read_parquet(test_path)
-            
-            with open(split_info_path, 'r') as f:
-                metadata = json.load(f)
-            
-            splits = {
-                'train': train_df,
-                'validation': val_df,
-                'test': test_df,
-                'metadata': metadata
-            }
-            
-            self.data_splits = splits
-            print(f"✅ Loaded existing data splits from: {output_dir}")
-            return splits
-            
-        except Exception as e:
-            print(f"⚠️ Error loading existing splits: {e}")
-            return None
-    
-    def validate_data_quality(self, df: pd.DataFrame) -> Dict[str, Any]:
-        """
-        Validate data quality and return quality metrics.
-        
-        Args:
-            df: DataFrame to validate
-            
-        Returns:
-            Dictionary with quality metrics
-        """
-        print("🔍 Validating data quality...")
-        
-        quality_metrics = {
-            'total_rows': len(df),
-            'missing_values': df.isnull().sum().to_dict(),
-            'duplicate_rows': df.duplicated().sum(),
-            'data_types': df.dtypes.to_dict(),
-            'memory_usage_mb': df.memory_usage(deep=True).sum() / 1024**2,
-        }
-        
-        # Check for extreme values in price data
-        price_col = self.config.data.price_col
-        if price_col in df.columns:
-            quality_metrics['price_stats'] = {
-                'min': float(df[price_col].min()),
-                'max': float(df[price_col].max()),
-                'mean': float(df[price_col].mean()),
-                'std': float(df[price_col].std()),
-                'zero_values': int((df[price_col] == 0).sum()),
-                'negative_values': int((df[price_col] < 0).sum())
-            }
-        
-        # Check feature completeness
-        if self.feature_columns:
-            available_features = [col for col in self.feature_columns if col in df.columns]
-            quality_metrics['feature_completeness'] = {
-                'available_features': len(available_features),
-                'total_features': len(self.feature_columns),
-                'completion_rate': len(available_features) / len(self.feature_columns)
-            }
-        
-        print(f"   ✅ Data quality validation complete")
-        print(f"   📊 Total rows: {quality_metrics['total_rows']:,}")
-        print(f"   🔍 Missing values: {sum(quality_metrics['missing_values'].values())}")
-        print(f"   🔄 Duplicate rows: {quality_metrics['duplicate_rows']}")
-        
-        return quality_metrics
-
-
-if __name__ == "__main__":
-    # Example usage
-    from .config_manager import ConfigManager
-    
-    config = ConfigManager()
-    processor = DataProcessor(config)
-    
-    # Run full pipeline
-    processed_data, features, splits = processor.run_full_pipeline()
-    
-    # Validate data quality
-    quality = processor.validate_data_quality(processed_data)
-    print(f"\nData Quality Report: {quality}")

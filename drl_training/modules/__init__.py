@@ -16,7 +16,6 @@ from .model_trainer import ModelTrainer
 from .performance_analyzer import PerformanceAnalyzer
 from .hyperparameter_optimizer import HyperparameterOptimizer
 from .rolling_window_trainer import RollingWindowTrainer
-from .trading_orchestrator import TradingOrchestrator
 
 __all__ = [
     'ConfigManager',
@@ -26,8 +25,7 @@ __all__ = [
     'ModelTrainer',
     'PerformanceAnalyzer',
     'HyperparameterOptimizer',
-    'RollingWindowTrainer',
-    'TradingOrchestrator'
+    'RollingWindowTrainer'
 ]
 
 __version__ = "1.0.0"

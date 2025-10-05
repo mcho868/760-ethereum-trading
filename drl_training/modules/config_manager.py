@@ -9,7 +9,7 @@ Author: DRL Trading Team
 
 import os
 import json
-from typing import Dict, List, Any, Optional, Union
+from typing import Dict, List, Any, Optional
 from multiprocessing import cpu_count
 from pathlib import Path
 from dataclasses import dataclass, field
@@ -231,9 +231,6 @@ class ConfigManager:
         if config_path and os.path.exists(config_path):
             self.load_from_file(config_path)
         
-        # Create necessary directories
-        self._create_directories()
-        
     def load_from_file(self, config_path: str) -> None:
         """
         Load configuration from JSON file.
@@ -260,132 +257,6 @@ class ConfigManager:
         except json.JSONDecodeError as e:
             print(f"❌ Error parsing configuration file: {e}")
             print("🔧 Using default configuration")
-            
-    def save_to_file(self, config_path: str) -> None:
-        """
-        Save current configuration to JSON file.
-        
-        Args:
-            config_path: Path to save the configuration file
-        """
-        config_dict = self.to_dict()
-        
-        # Create environment-specific structure
-        output_config = {self.environment: config_dict}
-        
-        os.makedirs(os.path.dirname(config_path), exist_ok=True)
-        
-        with open(config_path, 'w') as f:
-            json.dump(output_config, f, indent=2, default=str)
-        
-        print(f"💾 Configuration saved to: {config_path}")
-        
-    def to_dict(self) -> Dict[str, Any]:
-        """Convert configuration to dictionary."""
-        return {
-            'data': self.data.__dict__,
-            'state_space': self.state_space.__dict__,
-            'action_space': self.action_space.__dict__,
-            'reward': self.reward.__dict__,
-            'trading': self.trading.__dict__,
-            'training_protocol': self.training_protocol.__dict__,
-            'model': self.model.__dict__,
-            'bulk_testing': self.bulk_testing.__dict__,
-            'feature_engineering': self.feature_engineering.__dict__,
-            'sentiment': self.sentiment.__dict__,
-        }
-        
-    def _update_configs_from_dict(self, config_dict: Dict[str, Any]) -> None:
-        """Update configuration objects from dictionary."""
-        for section_name, section_data in config_dict.items():
-            if hasattr(self, section_name) and isinstance(section_data, dict):
-                config_obj = getattr(self, section_name)
-                for key, value in section_data.items():
-                    if hasattr(config_obj, key):
-                        setattr(config_obj, key, value)
-                        
-    def _create_directories(self) -> None:
-        """Create necessary directories."""
-        directories = [
-            self.data.output_dir,
-            self.data.model_dir,
-            self.model.training_config['eval_log_path'],
-        ]
-        
-        for directory in directories:
-            os.makedirs(directory, exist_ok=True)
-            
-    def get_reward_components(self) -> Dict[str, float]:
-        """Get reward components as dictionary for compatibility."""
-        return self.reward.__dict__
-        
-    def get_feature_columns(self) -> List[str]:
-        """Get standard feature column names for 15D state space."""
-        return [
-            # Core features (4D - position and position_change added dynamically)
-            'z_score', 'zone_norm', 'price_momentum', 'z_score_momentum',
-            # Technical indicators (8D)
-            'macd', 'macd_signal', 'macd_histogram',  # MACD (3D)
-            'rsi',  # RSI (1D)
-            'bb_middle', 'bb_upper', 'bb_lower',  # Bollinger Bands (3D)
-            'obv',  # OBV (1D)
-            # Sentiment (1D)
-            'sentiment_score'
-        ]
-        
-    def validate_configuration(self) -> bool:
-        """
-        Validate configuration parameters.
-        
-        Returns:
-            True if configuration is valid, False otherwise
-        """
-        try:
-            # Validate data ratios sum to 1.0
-            total_ratio = (self.training_protocol.train_ratio + 
-                          self.training_protocol.validation_ratio + 
-                          self.training_protocol.test_ratio)
-            if abs(total_ratio - 1.0) > 1e-6:
-                print(f"❌ Data ratios sum to {total_ratio}, should be 1.0")
-                return False
-            
-            # Validate positive values
-            if self.trading.initial_capital <= 0:
-                print("❌ Initial capital must be positive")
-                return False
-                
-            if self.trading.episode_length <= 0:
-                print("❌ Episode length must be positive")
-                return False
-                
-            # Validate position limits
-            if (self.trading.position_limits[0] >= self.trading.position_limits[1] or
-                abs(self.trading.position_limits[0]) != abs(self.trading.position_limits[1])):
-                print("❌ Position limits must be symmetric and valid")
-                return False
-                
-            # Validate action space
-            if self.action_space.max_position_shift <= 0 or self.action_space.max_position_shift > 1:
-                print("❌ Max position shift must be between 0 and 1")
-                return False
-                
-            print("✅ Configuration validation passed")
-            return True
-            
-        except Exception as e:
-            print(f"❌ Configuration validation error: {e}")
-            return False
-            
-    def update_from_dict(self, updates: Dict[str, Any]) -> None:
-        """
-        Update configuration from dictionary.
-        
-        Args:
-            updates: Dictionary with configuration updates
-        """
-        self._update_configs_from_dict(updates)
-        print("🔧 Configuration updated")
-        
     def print_summary(self) -> None:
         """Print configuration summary."""
         print("\n🔧 Configuration Summary")
@@ -405,25 +276,3 @@ class ConfigManager:
         print(f"📁 Output Directory: {self.data.output_dir}")
         print(f"🔍 Environment: {self.environment}")
         print("=" * 50)
-
-
-# Convenience function for quick configuration loading
-def load_config(config_path: Optional[str] = None, environment: str = 'default') -> ConfigManager:
-    """
-    Quick configuration loading function.
-    
-    Args:
-        config_path: Path to configuration file
-        environment: Environment name
-        
-    Returns:
-        ConfigManager instance
-    """
-    return ConfigManager(config_path, environment)
-
-
-if __name__ == "__main__":
-    # Example usage
-    config = ConfigManager()
-    config.print_summary()
-    config.validate_configuration()
