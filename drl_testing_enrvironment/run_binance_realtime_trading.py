@@ -112,6 +112,7 @@ class TradingSystem:
         self.rewards_history = []
         self.portfolio_history = []
         self.start_time = None
+        self.report_file_path = None
         
         logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s', handlers=[logging.FileHandler('trading_system.log'), logging.StreamHandler(sys.stdout)])
         self.logger = logging.getLogger(__name__)
@@ -238,6 +239,12 @@ class TradingSystem:
         
     async def start(self):
         self.logger.info("--- STARTING NEW SESSION ---")
+        
+        report_dir = Path(__file__).parent / "trading_reports"
+        report_dir.mkdir(exist_ok=True)
+        self.report_file_path = report_dir / f"trading_report_{datetime.now().strftime('%Y%m%d_%H%M%S')}.log"
+        self.logger.info(f"Trade details will be logged to {self.report_file_path}")
+
         await self._flatten_position(reason="Starting session with a flat position.")
         self.sync_portfolio_state()
         self.initial_portfolio_value = self.cash_balance # After flattening, value is just cash
@@ -351,33 +358,62 @@ class TradingSystem:
         side = 'BUY' if self.position_change > 0 else 'SELL'
         formatted_qty = "{:.{prec}f}".format(quantity, prec=self.quantity_precision)
 
+        trade_log_entry = (
+            f"\n--- Trade Execution ---\n"
+            f"Timestamp: {datetime.now().isoformat()}\n"
+            f"Agent action: {action:.4f} -> Target: {target_position_eth:.6f} ETH\n"
+            f"Proposed Change: {self.position_change:.6f} ETH\n"
+            f"Executing: {side} {formatted_qty} ETH at approx. ${current_price:.2f}\n"
+            f"Notional Value: ${notional_value:.2f}\n"
+        )
+
         self.logger.info(f"Agent action: {action:.4f} -> Target: {target_position_eth:.6f} ETH. Executing {side} {formatted_qty} ETH.")
         try:
             order_result = binance_api.place_market_order(symbol=SYMBOL, side=side, quantity=formatted_qty)
             self.logger.info(f"Order successful: {order_result}")
             self.trades_count += 1
+            
+            trade_log_entry += f"Order Result: {json.dumps(order_result)}\n"
+
         except Exception as e:
             self.logger.error(f"ORDER FAILED: {e}")
             self.position_change = 0
+            trade_log_entry += f"ORDER FAILED: {e}\n"
+            if self.report_file_path:
+                with open(self.report_file_path, 'a') as f:
+                    f.write(trade_log_entry)
             return 0.0
         
         self.sync_portfolio_state(current_price=current_price)
         reward = (self.portfolio_value - old_portfolio_value) / old_portfolio_value if old_portfolio_value != 0 else 0.0
+        
+        trade_log_entry += f"New Portfolio Value: ${self.portfolio_value:.2f}\n"
+        trade_log_entry += f"Calculated Reward: {reward:.6f}\n"
+        trade_log_entry += f"---------------------\n"
+        
+        if self.report_file_path:
+            with open(self.report_file_path, 'a') as f:
+                f.write(trade_log_entry)
+
         return reward
         
     def _log_status(self, state: np.ndarray, action: float, price: float, reward: float):
         state_str = np.array2string(state, precision=3, separator=',', suppress_small=True)
         log_message = (
             f"\n--- Timestep Report ---\n"
+            f"  Timestamp  : {datetime.now().isoformat()}\n"
             f"  State      : {state_str}\n"
             f"  Action     : {action:+.4f}\n"
             f"  Reward     : {reward:+.6f}\n"
             f"  Price      : ${price:.2f}\n"
             f"  Position   : {self.current_position:.4f} ETH\n"
             f"  Portfolio  : ${self.portfolio_value:.2f}\n"
-            f"  ---------------------"
+            f"  ---------------------\n"
         )
         self.logger.info(log_message)
+        if self.report_file_path:
+            with open(self.report_file_path, 'a') as f:
+                f.write(log_message)
         
     def _generate_report(self):
         self.logger.info("--- SESSION REPORT ---")
@@ -391,8 +427,14 @@ class TradingSystem:
             self.logger.error(f"Could not fetch final price for report: {e}")
             final_value = self.portfolio_value # Fallback to last known value
 
+        summary_str = f"\n--- FINAL SESSION SUMMARY ---\n"
+
         if not self.portfolio_history:
             self.logger.info("No trades were made during this session.")
+            summary_str += "No trades were made during this session.\n"
+            if self.report_file_path:
+                with open(self.report_file_path, 'a') as f:
+                    f.write(summary_str)
             return
 
         pnl = final_value - self.initial_portfolio_value
@@ -408,18 +450,34 @@ class TradingSystem:
             'avg_reward': np.mean(self.rewards_history) if self.rewards_history else 0,
         }
 
+        summary_str += (
+            f"Duration: {report['session_duration']}\n"
+            f"Total Trades: {report['total_trades']}\n"
+            f"Initial Portfolio: ${report['initial_portfolio_value']:.2f}\n"
+            f"Final Portfolio: ${report['final_portfolio_value']:.2f}\n"
+            f"Profit/Loss: ${report['pnl']:.2f} ({report['total_return_pct']:.2f}%)\n"
+            f"Average Reward: {report['avg_reward']:.6f}\n"
+            f"---------------------------\n"
+        )
+
         self.logger.info(f"Duration: {report['session_duration']}")
         self.logger.info(f"Total Trades: {report['total_trades']}")
         self.logger.info(f"Initial Portfolio: ${report['initial_portfolio_value']:.2f}")
         self.logger.info(f"Final Portfolio: ${report['final_portfolio_value']:.2f}")
         self.logger.info(f"Profit/Loss: ${report['pnl']:.2f} ({report['total_return_pct']:.2f}%) ")
         
+        if self.report_file_path:
+            with open(self.report_file_path, 'a') as f:
+                f.write(summary_str)
+            self.logger.info(f"Full report saved to {self.report_file_path}")
+
+        # Keep the JSON report as well
         report_dir = Path(__file__).parent / "trading_reports"
-        report_dir.mkdir(exist_ok=True) # Ensure directory exists
+        report_dir.mkdir(exist_ok=True)
         report_file = report_dir / f"trading_report_{datetime.now().strftime('%Y%m%d_%H%M%S')}.json"
         with open(report_file, 'w') as f:
             json.dump(report, f, indent=2, default=str)
-        self.logger.info(f"Full report saved to {report_file}")
+        self.logger.info(f"Full JSON report saved to {report_file}")
 
 def load_config() -> Dict:
     config_file = Path("trading_config.json")
