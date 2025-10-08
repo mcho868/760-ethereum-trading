@@ -4,8 +4,8 @@ import os
 import sys
 
 # ====== Fill in your Testnet API Key and Secret ======
-API_KEY = "LyKVJBT0ddo4rUtyqdsQ8GLdE1AyIJ2N8qiPpRtuvxBrEkBNo3A6QN1dQPOj7DK9"
-API_SECRET = "dA0PDEQyjTc730HnkR3GTAM7ypuXIUxLbmh4Fiyc2qVeKenVRbN70vg0cMtxhBbi"
+API_KEY = os.getenv('API_KEY')
+API_SECRET = os.getenv('API_SECRET')
 
 
 # Create client for Binance Testnet
