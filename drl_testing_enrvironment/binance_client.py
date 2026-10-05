@@ -83,7 +83,7 @@ if __name__ == "__main__":
             orders = list_open_orders()
             if not orders:
                 print("No open orders.")
-            else:
+            else:￼￼￼￼ Rollin￼￼￼￼ Rolling window 훈련이 정확히 어떻게 동작하는가? (6개월 학습 / 1개월 검증 / walk-forward 방식)g window 훈련이 정확히 어떻게 동작하는가? (6개월 학습 / 1개월 검증 / walk-forward 방식)
                 for o in orders:
                     print(f"ID={o['orderId']} {o['side']} {o['origQty']} {o['symbol']} @ {o['price']} Status={o['status']}")
 

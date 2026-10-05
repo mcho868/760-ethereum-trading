@@ -19,3 +19,4 @@ Test_drl_training/**/*.json
 *.parquet
 *.zip
 venv/
+.env
